@@ -13,3 +13,8 @@ fun getFileFromArgs(args: Array<String>): File {
     }
     return file
 }
+
+fun getNonBlankFileLines(args: Array<String>) =
+    getFileFromArgs(args)
+        .readLines()
+        .filter { it.isNotBlank() }

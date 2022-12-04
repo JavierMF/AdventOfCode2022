@@ -7,19 +7,17 @@ import day02.ExpectedResult.Companion.fromCode
 import day02.RSPChoice.*
 import day02.RSPChoice.Companion.fromElveCode
 import day02.RSPChoice.Companion.fromResponseCode
-import getFileFromArgs
+import getNonBlankFileLines
 
 fun main(args: Array<String>) {
-    val file = getFileFromArgs(args)
+    val lines = getNonBlankFileLines(args)
 
-    val result1 = file.readLines()
-        .filter { it.isNotBlank() }
+    val result1 = lines
         .map { line -> line.toRound() }
         .map { round -> round.result() }
         .sumBy { it }
 
-    val result2 = file.readLines()
-        .filter { it.isNotBlank() }
+    val result2 = lines
         .map { line -> line.toDesiredRound() }
         .map { desired -> desired.toRound() }
         .map { round -> round.result() }

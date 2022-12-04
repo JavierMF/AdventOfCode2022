@@ -2,12 +2,10 @@ package day03
 
 // https://adventofcode.com/2022/day/3
 
-import getFileFromArgs
+import getNonBlankFileLines
 
 fun main(args: Array<String>) {
-    val rucksacks = getFileFromArgs(args)
-        .readLines()
-        .filter { it.isNotBlank() }
+    val rucksacks = getNonBlankFileLines(args)
         .map { Rucksack(it) }
 
     val result1 = rucksacks
