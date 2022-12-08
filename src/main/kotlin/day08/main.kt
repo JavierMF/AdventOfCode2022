@@ -9,13 +9,13 @@ fun main(args: Array<String>) {
         .map { row -> row.map { it.digitToInt() }}.toList()
 
     val visible = forest
-        .applyToAll { rowIndex, colIndex -> forest.isVisible(rowIndex, colIndex) }
+        .applyToAll { treeCoords -> forest.isVisible(treeCoords) }
         .count { it }
 
     println(visible)
 
     val maxScenicScore = forest
-        .applyToAll { rowIndex, colIndex -> forest.scenicScore(rowIndex, colIndex) }
+        .applyToAll { treeCoords -> forest.scenicScore(treeCoords) }
         .maxOf { it }
 
     println(maxScenicScore)
@@ -23,19 +23,22 @@ fun main(args: Array<String>) {
 
 typealias Forest = List<List<Int>>
 typealias Neighbours = List<Int>
+data class TreeCoords(val row: Int, val col: Int)
+private fun Forest.get(treeCoords: TreeCoords) = this[treeCoords.row][treeCoords.col]
 
-private fun Forest.scenicScore(rowIndex: Int, colIndex: Int): Int =
-    if (this.isBoundary(rowIndex, colIndex)) 0 else
-    this.distanceLeft(rowIndex, colIndex) *
-            this.distanceRight(rowIndex, colIndex) *
-            this.distanceTop(rowIndex, colIndex) *
-            this.distanceBottom(rowIndex, colIndex)
+private fun Forest.scenicScore(treeCoords: TreeCoords): Int =
+    if (this.isBoundary(treeCoords)) 0 else
+    this.distanceLeft(treeCoords) *
+            this.distanceRight(treeCoords) *
+            this.distanceTop(treeCoords) *
+            this.distanceBottom(treeCoords)
 
-private fun Forest.distanceLeft(rowIndex: Int, colIndex: Int): Int =
-    this.treesAtLeft(rowIndex, colIndex).reversed().distance(this[rowIndex][colIndex])
+private fun Forest.distanceLeft(treeCoords: TreeCoords): Int =
+    this.treesAtLeft(treeCoords).reversed().distance(this.get(treeCoords))
 
-private fun Forest.distanceRight(rowIndex: Int, colIndex: Int): Int =
-    this.treesAtRight(rowIndex, colIndex).distance(this[rowIndex][colIndex])
+
+private fun Forest.distanceRight(treeCoords: TreeCoords): Int =
+    this.treesAtRight(treeCoords).distance(this.get(treeCoords))
 
 private fun Neighbours.distance(treeSize: Int): Int {
     var distance = 0
@@ -45,52 +48,54 @@ private fun Neighbours.distance(treeSize: Int): Int {
         }
     return distance
 }
-private fun Forest.distanceTop(rowIndex: Int, colIndex: Int): Int =
-    this.treesAtTop(rowIndex, colIndex).reversed().distance(this[rowIndex][colIndex])
+private fun Forest.distanceTop(treeCoords: TreeCoords): Int =
+    this.treesAtTop(treeCoords).reversed().distance(this.get(treeCoords))
 
-private fun Forest.distanceBottom(rowIndex: Int, colIndex: Int): Int =
-    this.treesAtBottom(rowIndex, colIndex).distance(this[rowIndex][colIndex])
-
-
-
-private fun Forest.isVisible(rowIndex: Int, colIndex: Int): Boolean =
-    this.isBoundary(rowIndex, colIndex)
-            || this.visibleFromLeft(rowIndex, colIndex)
-            || this.visibleFromRight(rowIndex, colIndex)
-            || this.visibleFromTop(rowIndex, colIndex)
-            || this.visibleFromBottom(rowIndex, colIndex)
-
-private fun Forest.visibleFromLeft(rowIndex: Int, colIndex: Int): Boolean =
-    this.treesAtLeft(rowIndex, colIndex).isVisible(this[rowIndex][colIndex])
-
-private fun Forest.visibleFromRight(rowIndex: Int, colIndex: Int): Boolean =
-    this.treesAtRight(rowIndex, colIndex).isVisible(this[rowIndex][colIndex])
-
-private fun Forest.visibleFromTop(rowIndex: Int, colIndex: Int): Boolean =
-    this.treesAtTop(rowIndex, colIndex).isVisible(this[rowIndex][colIndex])
-
-private fun Forest.visibleFromBottom(rowIndex: Int, colIndex: Int): Boolean =
-    this.treesAtBottom(rowIndex, colIndex).isVisible(this[rowIndex][colIndex])
-
-private fun Neighbours.isVisible(treeSize: Int) = this.all { it <  treeSize }
+private fun Forest.distanceBottom(treeCoords: TreeCoords): Int =
+    this.treesAtBottom(treeCoords).distance(this.get(treeCoords))
 
 
 
-private fun Forest.treesAtLeft(rowIndex: Int, colIndex: Int): Neighbours =
-    this[rowIndex].slice(0 until colIndex)
+private fun Forest.isVisible(treeCoords: TreeCoords): Boolean =
+    this.isBoundary(treeCoords)
+            || this.visibleFromLeft(treeCoords)
+            || this.visibleFromRight(treeCoords)
+            || this.visibleFromTop(treeCoords)
+            || this.visibleFromBottom(treeCoords)
 
-private fun Forest.treesAtRight(rowIndex: Int, colIndex: Int): Neighbours =
-    this[rowIndex].slice((colIndex+ 1) until this.size)
+private fun Forest.visibleFromLeft(treeCoords: TreeCoords): Boolean =
+    this.treesAtLeft(treeCoords).isVisible(this.get(treeCoords))
 
-private fun Forest.treesAtTop(rowIndex: Int, colIndex: Int): Neighbours =
-    (0 until rowIndex).map { this[it][colIndex] }
+private fun Forest.visibleFromRight(treeCoords: TreeCoords): Boolean =
+    this.treesAtRight(treeCoords).isVisible(this.get(treeCoords))
 
-private fun Forest.treesAtBottom(rowIndex: Int, colIndex: Int): Neighbours =
-    ((rowIndex + 1) until this.size).map { this[it][colIndex] }
+private fun Forest.visibleFromTop(treeCoords: TreeCoords): Boolean =
+    this.treesAtTop(treeCoords).isVisible(this.get(treeCoords))
 
-private fun Forest.isBoundary(rowIndex: Int, colIndex: Int): Boolean =
-    rowIndex == 0 || colIndex == 0 || rowIndex == (this.size - 1) || colIndex == (this[0].size - 1)
+private fun Forest.visibleFromBottom(treeCoords: TreeCoords): Boolean =
+    this.treesAtBottom(treeCoords).isVisible(this.get(treeCoords))
+
+private fun Neighbours.isVisible(treeSize: Int) = this.all { it < treeSize }
 
 
-private fun <E> Forest.applyToAll(function: (Int, Int) -> E): List<E> =
-    this.flatMapIndexed { rowIndex, row -> List(row.size) { colIndex -> function(rowIndex, colIndex) } }
+
+private fun Forest.treesAtLeft(treeCoords: TreeCoords): Neighbours =
+    this[treeCoords.row].slice(0 until treeCoords.col)
+
+private fun Forest.treesAtRight(treeCoords: TreeCoords): Neighbours =
+    this[treeCoords.row].slice((treeCoords.col + 1) until this.size)
+
+private fun Forest.treesAtTop(treeCoords: TreeCoords): Neighbours =
+    (0 until treeCoords.row).map { this[it][treeCoords.col] }
+
+private fun Forest.treesAtBottom(treeCoords: TreeCoords): Neighbours =
+    ((treeCoords.row + 1) until this.size).map { this[it][treeCoords.col] }
+
+private fun Forest.isBoundary(treeCoords: TreeCoords): Boolean =
+    treeCoords.row == 0 || treeCoords.col == 0 || treeCoords.row == (this.size - 1) || treeCoords.col == (this[0].size - 1)
+
+
+private fun <E> Forest.applyToAll(function: (tree: TreeCoords) -> E): List<E> =
+    this.flatMapIndexed { rowIndex, row -> List(row.size) { colIndex -> function(TreeCoords(rowIndex, colIndex)) } }
+
+
