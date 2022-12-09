@@ -9,13 +9,11 @@ fun main(args: Array<String>) {
 
     val moves = getNonBlankFileLines(args).map { HeadMoves(it) }
 
-    val state = State()
-    moves.forEach { state.applyMoves(it) }
-    println(state.visited.size)
-
-    val state2 = State(knots = 10)
-    moves.forEach { state2.applyMoves(it) }
-    println(state2.visited.size)
+    setOf(2, 10).forEach { knots ->
+        val state = State(knots = knots)
+        moves.forEach { state.applyMoves(it) }
+        println(state.visited.size)
+    }
 }
 
 class State(knots: Int = 2) {
@@ -32,18 +30,13 @@ class State(knots: Int = 2) {
     private fun applyMove(dir: Direction) {
         val newPositions = mutableListOf(head.moveTo(dir))
 
-        knotsPositions.slice(1 until knotsPositions.size)
+        knotsPositions.drop(1)
             .forEach { pos ->
-                val newPos = nextFollowerPos(lead = newPositions.last(), follower= pos)
+                val newPos = pos.follow(lead = newPositions.last())
                 newPositions.add(newPos)
             }
         knotsPositions = newPositions
         visited.add(tail)
-    }
-
-    private fun nextFollowerPos(lead: Pos, follower: Pos): Pos {
-        val nextMove = lead.diff(follower).followerMove()
-        return Pos(follower.x + nextMove.x, follower.y + nextMove.y)
     }
 
     companion object {
@@ -53,7 +46,13 @@ class State(knots: Int = 2) {
 
 data class Pos(val x:Int, val y:Int) {
     fun moveTo(dir: Direction) = Pos(this.x + dir.x, this.y + dir.y)
-    fun diff(other: Pos) = PosDiff(this.x - other.x, this.y - other.y)
+
+    fun follow(lead: Pos): Pos {
+        val nextMove = lead.diff(this).followerMove()
+        return Pos(this.x + nextMove.x, this.y + nextMove.y)
+    }
+
+    private fun diff(other: Pos) = PosDiff(this.x - other.x, this.y - other.y)
 }
 
 data class PosDiff(val x:Int, val y:Int) {
