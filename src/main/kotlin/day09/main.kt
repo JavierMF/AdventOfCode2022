@@ -4,6 +4,7 @@ package day09
 
 import getNonBlankFileLines
 import kotlin.math.absoluteValue
+import kotlin.math.sign
 
 fun main(args: Array<String>) {
 
@@ -58,13 +59,9 @@ data class Pos(val x:Int, val y:Int) {
 data class PosDiff(val x:Int, val y:Int) {
     fun followerMove() = FollowerMove(nextValue(x), nextValue(y))
 
-    private fun nextValue(value:Int) =
-        if (isDiagonalMove() && (value/2) == 0) value else value/2
+    private fun nextValue(value:Int) = if (isDiagonalMove) value.sign else value/2
 
-    private fun isDiagonalMove(): Boolean =
-        (x.absoluteValue > 1 && y.absoluteValue > 0) ||
-                (x.absoluteValue > 0 && y.absoluteValue > 1)
-
+    private val isDiagonalMove get() = setOf(x.absoluteValue, y.absoluteValue) == setOf(1, 2)
 }
 
 data class FollowerMove(val x:Int, val y:Int)
