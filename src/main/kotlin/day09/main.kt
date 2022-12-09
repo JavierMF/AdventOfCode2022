@@ -19,15 +19,11 @@ fun main(args: Array<String>) {
 }
 
 class State(knots: Int = 2) {
-    private var knotsPositions: List<Pos>
+    private var knotsPositions = (0 until knots).map { initialPos }
     val visited = mutableSetOf(initialPos)
 
     private val head get() = knotsPositions.first()
     private val tail get() = knotsPositions.last()
-
-    init {
-        knotsPositions = (0 until knots).map { initialPos }
-    }
 
     fun applyMoves(headMoves: HeadMoves) {
         repeat(headMoves.moves) { applyMove(headMoves.dir) }
@@ -46,26 +42,9 @@ class State(knots: Int = 2) {
     }
 
     private fun nextFollowerPos(lead: Pos, follower: Pos): Pos {
-        val diffX = lead.x - follower.x
-        val diffY = lead.y - follower.y
-
-        val moveX: Int
-        val moveY: Int
-
-        if (isDiagonalMove(diffX, diffY)) {
-           moveX = if (diffX/2 == 0) diffX else diffX/2
-           moveY = if (diffY/2 == 0) diffY else diffY/2
-       } else {
-           moveX = diffX/2
-           moveY = diffY/2
-       }
-
-        return Pos(follower.x + moveX, follower.y + moveY)
+        val nextMove = lead.diff(follower).followerMove()
+        return Pos(follower.x + nextMove.x, follower.y + nextMove.y)
     }
-
-    private fun isDiagonalMove(diffX:Int, diffY:Int): Boolean =
-        (diffX.absoluteValue > 1 && diffY.absoluteValue > 0) ||
-                (diffX.absoluteValue > 0 && diffY.absoluteValue > 1)
 
     companion object {
         val initialPos = Pos(0, 0)
@@ -74,7 +53,22 @@ class State(knots: Int = 2) {
 
 data class Pos(val x:Int, val y:Int) {
     fun moveTo(dir: Direction) = Pos(this.x + dir.x, this.y + dir.y)
+    fun diff(other: Pos) = PosDiff(this.x - other.x, this.y - other.y)
 }
+
+data class PosDiff(val x:Int, val y:Int) {
+    fun followerMove() = FollowerMove(nextValue(x), nextValue(y))
+
+    private fun nextValue(value:Int) =
+        if (isDiagonalMove() && (value/2) == 0) value else value/2
+
+    private fun isDiagonalMove(): Boolean =
+        (x.absoluteValue > 1 && y.absoluteValue > 0) ||
+                (x.absoluteValue > 0 && y.absoluteValue > 1)
+
+}
+
+data class FollowerMove(val x:Int, val y:Int)
 
 class HeadMoves(line: String) {
     val dir: Direction
