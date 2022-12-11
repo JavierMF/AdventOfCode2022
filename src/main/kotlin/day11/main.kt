@@ -18,8 +18,8 @@ fun main(args: Array<String>) {
 fun List<Monkey>.rounds(repetitions: Int, worryReducerFunc: (Long) -> Long): Long {
     repeat(repetitions) {
         this.forEach { monkey ->
-            monkey.sendItems(worryReducerFunc).forEach {
-                this[it.toMonkey].receiveItem(it.item)
+            monkey.sendItems(worryReducerFunc).forEach { sent ->
+                this[sent.toMonkey].receiveItem(sent.item)
             }
         }
     }
@@ -38,17 +38,16 @@ fun getMonkeys(args: Array<String>): List<Monkey> {
     getFileFromArgs(args).readLines()
         .forEach {
             if (it.isNotEmpty()) monkeyLines.add(it)
-            else { monkeys.add(Monkey(monkeyLines)); monkeyLines.clear()
-            }
+            else { monkeys.add(Monkey(monkeyLines)); monkeyLines.clear() }
         }
     monkeys.add(Monkey(monkeyLines))
     return monkeys
 }
 
 class Monkey(lines: List<String>) {
-    private var items = lines[1].split(":")[1].split(",").map { it.trim().toLong() }.toMutableList()
+    private var items = lines[1].split(": ".toRegex())[1].split(",").map { it.toLong() }.toMutableList()
     private val operation: Operation = Operation(lines[2])
-    private val sender: Sender =  Sender(lines.slice(3 until 6))
+    private val sender: Sender =  Sender(lines.takeLast(3))
 
     var itemsInspected = 0L
 
