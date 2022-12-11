@@ -14,7 +14,6 @@ fun main(args: Array<String>) {
 
     println(cpu.signalStrength)
     println(cpu.crt.printable())
-
 }
 
 class Crt {
@@ -53,23 +52,20 @@ data class Cpu(
         instructions.forEach {
             when (it) {
                 is Noop -> executeAdd(0)
-                is Addx -> {
-                    executeAdd(0)
-                    executeAdd(it.value)
-                }
+                is Addx -> { executeAdd(0); executeAdd(it.value) }
             }
         }
     }
 
     private fun executeAdd(value: Int) {
-        cpuState = CpuState(cycle = cpuState.cycle + 1, register = cpuState.register + value)
+        cpuState = cpuState.add(value)
         crt.nextCycle(position = cpuState.register)
         updateSignalStrength()
     }
 
     private fun updateSignalStrength() {
-        if ((cpuState.cycle-20) % 40 == 0) {
-            signalStrength += cpuState.cycle * cpuState.register
+        if (cpuState.isSignalStrengthCycle()) {
+            signalStrength += cpuState.signalStrength()
         }
     }
 }
@@ -77,7 +73,15 @@ data class Cpu(
 data class CpuState(
     val cycle: Int,
     val register: Int = 1,
-)
+) {
+    fun add(value: Int) = CpuState(
+        cycle = this.cycle + 1,
+        register = this.register + value
+    )
+
+    fun isSignalStrengthCycle() = (cycle - 20) % 40 == 0
+    fun signalStrength() = cycle * register
+}
 
 interface Instruction {
     companion object {
