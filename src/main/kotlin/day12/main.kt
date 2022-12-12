@@ -7,8 +7,8 @@ import getNonBlankFileLines
 fun main(args: Array<String>) {
     val map = HeightMapBuilder(getNonBlankFileLines(args)).build()
 
-    println(map.sortestRouteLength())
-    println(map.sortestRouteFromAnyBottomLength())
+    println(map.lengthOfSortestRoute())
+    println(map.lengthOfSortestRouteFromAnyBottom())
 }
 
 data class HeightMap(
@@ -20,45 +20,43 @@ data class HeightMap(
     private val maxY = positions.size
 
 
-    fun sortestRouteLength() = sortestRoute().size - 1
-    private fun sortestRoute(): Route = sortestRoute(start)
+    fun lengthOfSortestRoute(): Int = sortestRoute(start)
 
-    fun sortestRouteFromAnyBottomLength() = sortestRouteFromAnyBottom().size - 1
-    private fun sortestRouteFromAnyBottom(): Route {
+    fun lengthOfSortestRouteFromAnyBottom(): Int {
         val bottomStartingRoutes = positions.flatMap { it.filter { it.isBottom() } }
         return sortestRoute(*bottomStartingRoutes.toTypedArray())
     }
 
-    private fun sortestRoute(vararg initialPositions: Position): Route {
-        var routes = initialPositions.map { listOf(it) }
-        var newRoutes = mutableListOf<Route>()
+    private fun sortestRoute(vararg initialPositions: Position): Int {
+        var routeHeads = initialPositions.toSet()
+        var newRoutes = mutableSetOf<Position>()
         val visited = mutableSetOf<Position>()
+        var length = 0
 
-        while (true) {
-           routes.forEach { route ->
-               val nextSteps = route.nextSteps(visited)
+        while (routeHeads.isNotEmpty()) {
+            length += 1
 
-               if (end in nextSteps) return route + end
+            routeHeads.forEach { route ->
+                val nextSteps = route.nextStepsAvoidingVisited(visited)
 
-               nextSteps.forEach { candidate ->
-                   newRoutes.add(route + candidate).also { visited.add(candidate) }
-               }
+                if (end in nextSteps) return length
+
+                newRoutes += nextSteps
+                visited += nextSteps
            }
-            routes = newRoutes
-            newRoutes = mutableListOf()
+            routeHeads = newRoutes
+            newRoutes = mutableSetOf()
         }
+        throw RuntimeException("End node not found")
     }
 
-    private fun Route.nextSteps(visited: Set<Position>): List<Position> {
-        val lastPos = this.last()
-        return lastPos.neighboursCoords(maxX, maxY)
+    private fun Position.nextStepsAvoidingVisited(visited: Set<Position>) =
+        this.neighboursCoords(maxX, maxY)
             .map { positions[it.y][it.x] }
             .filterNot { it in visited }
-            .filter { it.reachableFrom(lastPos) }
-    }
+            .filter { it.reachableFrom(this) }
+            .toSet()
 }
-
-typealias Route = List<Position>
 
 class HeightMapBuilder(lines: List<String>) {
     private val positions : MutableList<List<Position?>> = mutableListOf()
