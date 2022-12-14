@@ -1,6 +1,6 @@
 package day13
 
-// https://adventofcode.com/2022/day/12
+// https://adventofcode.com/2022/day/13
 
 import getFileFromArgs
 
