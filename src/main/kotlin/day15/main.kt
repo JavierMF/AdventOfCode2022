@@ -6,7 +6,7 @@ import getNonBlankFileLines
 import kotlin.system.measureTimeMillis
 
 fun main(args: Array<String>) {
-    val isDemo = false;
+    val isDemo = false
     val constraints = if (isDemo) Pair(10, 20) else Pair(2000000, 4000000)
 
     val rows = getNonBlankFileLines(args).map { Row(it) }.toSet()
@@ -48,9 +48,6 @@ class Cave(private val posSet: Set<Row>) {
     private fun isFree(coords: Coords): Boolean =
         posSet.any { !occoupied.contains(coords) && it.isFree(coords) }
 }
-enum class Content(val aChar: Char) { SENSOR('S'), BEACON('B'), EMPTY('#'), UNKNOWN('.') }
-
-data class Position(val coords: Coords, val content: Content)
 
 class Row(line: String) {
     val sensor: Coords
@@ -93,20 +90,6 @@ data class Coords(val x: Int, val y: Int) {
     fun distanceTo(other: Coords): Int = distanceAxis(other.x, this.x) + distanceAxis(other.y, this.y)
 
     private fun distanceAxis(a: Int, b: Int) = if (a > b) a - b else b - a
-
-    fun inDistance(distance: Int): Set<Coords> {
-        val coords = mutableSetOf<Coords>()
-        for (i in 0..distance) {
-            for (j in 0..distance) {
-                if ((i + j) > distance || (i == 0 && j == 0)) continue
-                coords += Coords(this.x + i, this.y + j)
-                coords += Coords(this.x - i, this.y + j)
-                coords += Coords(this.x + i, this.y - j)
-                coords += Coords(this.x - i, this.y - j)
-            }
-        }
-        return coords
-    }
 
     fun inBoundaries(max: Int): Boolean = this.x in 0..max && this.y in 0..max
 }
