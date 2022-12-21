@@ -2,6 +2,7 @@ package day21
 
 // https://adventofcode.com/2022/day/21
 
+import day21.Operation.*
 import getNonBlankFileLines
 import kotlin.system.measureTimeMillis
 
@@ -33,20 +34,13 @@ fun main(args: Array<String>) {
 
 fun findMatching(monkeys: Map<String, Monkey>): Long {
     val rootMonkey = monkeys["root"] as OperationMonkey
-    val human = monkeys["humn"] as LeafMonkey
+    val left = rootMonkey.leftMonkey!!
+    val right = rootMonkey.rightMonkey!!
 
-    var result = 0L
-
-    human.value = result
-    while (true) {
-        if ((result.mod(100000)) == 0) println(result)
-
-        human.value = result
-        if (rootMonkey.match()) return result
-        human.value = -result
-        if (rootMonkey.match()) return -result
-        result++
-    }
+    return if (left.hasHumanNode())
+        left.valueNeeded(right.eval())
+     else
+        right.valueNeeded(left.eval())
 }
 
 
@@ -54,14 +48,19 @@ interface Monkey {
     val name: String
     fun eval(): Long
     fun hasNode(node: String): Boolean
+    fun hasHumanNode() = hasNode("humn")
+    fun valueNeeded(needed: Long): Long
 }
+
 data class LeafMonkey(
     override val name: String,
     var value: Long
 ): Monkey {
     override fun eval() = value
     override fun hasNode(node: String) = node == name
+    override fun valueNeeded(needed: Long) = needed
 }
+
 data class OperationMonkey(
     override val name: String,
     val leftName: String,
@@ -70,38 +69,58 @@ data class OperationMonkey(
 ): Monkey {
     var leftMonkey: Monkey? = null
     var rightMonkey: Monkey? = null
-    var cachedValue: Long? = null
-    val canBeCached: Boolean by lazy { !hasNode("humn") }
+    private var cachedValue: Long? = null
+    private val canBeCached: Boolean by lazy { !hasHumanNode() }
 
-    override fun eval(): Long {
-        if (cachedValue != null) return cachedValue!!
-        if (canBeCached) {
-            cachedValue = computeValue()
-            return cachedValue!!
+    override fun eval(): Long =
+        when {
+            cachedValue != null -> cachedValue!!
+            canBeCached -> { cachedValue = computeValue(); cachedValue!! }
+            else -> computeValue()
         }
-        return computeValue()
-    }
 
     private fun computeValue(): Long =
         when (op) {
-            Operation.ADD -> leftMonkey!!.eval() + rightMonkey!!.eval()
-            Operation.MINUS -> leftMonkey!!.eval() - rightMonkey!!.eval()
-            Operation.MULT -> leftMonkey!!.eval() * rightMonkey!!.eval()
-            Operation.DIV -> leftMonkey!!.eval() / rightMonkey!!.eval()
+            ADD -> leftMonkey!!.eval() + rightMonkey!!.eval()
+            MINUS -> leftMonkey!!.eval() - rightMonkey!!.eval()
+            MULT -> leftMonkey!!.eval() * rightMonkey!!.eval()
+            DIV -> leftMonkey!!.eval() / rightMonkey!!.eval()
         }
 
     override fun hasNode(node: String): Boolean =
         leftMonkey!!.hasNode(node) || rightMonkey!!.hasNode(node)
 
-    fun compare(): Int  {
-        val leftVal = leftMonkey!!.eval()
-        val rightVal = rightMonkey!!.eval()
-        //println("$leftVal, $rightVal")
-        return leftVal.compareTo(rightVal)
-    }
-
-    fun match(): Boolean = compare() == 0
-
+    override fun valueNeeded(needed: Long): Long =
+        when (op) {
+            ADD -> {
+              if (rightMonkey!!.hasHumanNode()) {
+                  rightMonkey!!.valueNeeded(needed - leftMonkey!!.eval())
+              } else {
+                  leftMonkey!!.valueNeeded(needed - rightMonkey!!.eval())
+              }
+            }
+            MINUS ->  {
+                if (rightMonkey!!.hasHumanNode()) {
+                    rightMonkey!!.valueNeeded(leftMonkey!!.eval() - needed)
+                } else {
+                    leftMonkey!!.valueNeeded(needed + rightMonkey!!.eval())
+                }
+            }
+            MULT -> {
+                if (rightMonkey!!.hasHumanNode()) {
+                    rightMonkey!!.valueNeeded(needed.div(leftMonkey!!.eval() ))
+                } else {
+                    leftMonkey!!.valueNeeded(needed.div(rightMonkey!!.eval()))
+                }
+            }
+            DIV -> {
+                if (rightMonkey!!.hasHumanNode()) {
+                    rightMonkey!!.valueNeeded(leftMonkey!!.eval().div(needed))
+                } else {
+                    leftMonkey!!.valueNeeded(needed * rightMonkey!!.eval())
+                }
+            }
+        }
 }
 
 enum class Operation {
